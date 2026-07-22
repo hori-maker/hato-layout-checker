@@ -81,85 +81,87 @@
       flex-shrink: 0;
     }
 
-    /* 用紙本文エリア（相対位置基準） */
     .paper-body {
-      position: relative;
       height: 800px;
       width: 100%;
     }
 
-    /* 🌟 パターン2：2段ぶち抜きヘッダー（右端に絶対配置） */
-    .p2-header-area {
-      position: absolute;
-      top: 0;
-      right: 0;
-      bottom: 0;
-      width: 100px;
+    /* 🌟 パターン2：2段ぶち抜き用（崩れない堅牢Flex構造） */
+    .paper-body.layout-p2 {
+      display: flex;
+      flex-direction: row-reverse; /* 右端に見出し、左に本文 */
+    }
+
+    /* 右側見出しブロック */
+    .p2-header-block {
+      display: flex;
+      flex-direction: row-reverse; /* 右から左へ3列 */
+      height: 100%;
+      margin-left: 16px;
+      flex-shrink: 0;
+    }
+
+    /* 飾り罫線の列 */
+    .p2-deco-col {
       writing-mode: vertical-rl;
       -webkit-writing-mode: vertical-rl;
       font-family: var(--font-serif);
-      overflow: hidden;
-      white-space: nowrap;
-    }
-
-    .p2-header-area .line-col {
-      display: inline-block;
-      height: 100%;
-      vertical-align: top;
-    }
-
-    .p2-header-area .header-deco {
       font-size: 0.65rem;
       color: #475569;
       letter-spacing: 0.03em;
+      height: 100%;
+      overflow: hidden;
+      white-space: nowrap;
       margin-left: 8px;
     }
 
-    .p2-header-area .header-title-col {
-      position: relative;
+    /* タイトルと日付の列（確実に上と下に分離） */
+    .p2-title-col {
+      display: flex;
+      flex-direction: column; /* 上から下 */
+      justify-content: space-between; /* 上端にタイトル、下端に日付 */
+      align-items: center;
       height: 100%;
-      width: 1.8em;
       margin-left: 12px;
       margin-right: 4px;
     }
 
-    .p2-header-area .title-main {
-      position: absolute;
-      top: 0;
-      right: 0;
+    .p2-title-text {
+      writing-mode: vertical-rl;
+      -webkit-writing-mode: vertical-rl;
+      font-family: var(--font-serif);
       font-size: 1.15rem;
       font-weight: bold;
       letter-spacing: 0.15em;
       white-space: nowrap;
     }
 
-    .p2-header-area .date-sub {
-      position: absolute;
-      bottom: 0;
-      right: 0;
+    .p2-date-text {
+      writing-mode: vertical-rl;
+      -webkit-writing-mode: vertical-rl;
+      font-family: var(--font-serif);
       font-size: 0.78rem;
       letter-spacing: 0.1em;
       white-space: nowrap;
     }
 
-    /* パターン2の本分領域（ヘッダー分右側を開ける） */
-    .p2-body-area {
-      margin-right: 105px;
+    /* 左側本文ブロック */
+    .p2-body-block {
+      flex: 1;
       height: 100%;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
     }
 
-    /* パターン1の本分領域 */
-    .p1-body-area {
-      height: 100%;
+    /* パターン1用レイアウト */
+    .paper-body.layout-p1 {
       display: flex;
       flex-direction: column;
       justify-content: space-between;
     }
 
-    /* 縦書き段（1行26文字がピッタリ収まる高さ） */
+    /* 縦書き段（1行26文字ピッタリ） */
     .section {
       height: 375px;
       width: 100%;
@@ -193,10 +195,24 @@
       justify-content: space-between;
       align-items: center;
       box-sizing: border-box;
+      vertical-align: top;
     }
 
-    .p1-title-text { font-weight: bold; font-size: 1.05rem; letter-spacing: 0.15em; text-align: center; }
-    .p1-date-text { font-size: 0.78rem; letter-spacing: 0.1em; }
+    .p1-title-text {
+      writing-mode: vertical-rl;
+      -webkit-writing-mode: vertical-rl;
+      font-weight: bold;
+      font-size: 1.05rem;
+      letter-spacing: 0.15em;
+      text-align: center;
+    }
+
+    .p1-date-text {
+      writing-mode: vertical-rl;
+      -webkit-writing-mode: vertical-rl;
+      font-size: 0.78rem;
+      letter-spacing: 0.1em;
+    }
 
     /* フッター */
     .paper-footer { text-align: center; font-family: var(--font-serif); font-size: 0.85rem; color: #64748b; }
@@ -382,26 +398,27 @@
         paper.className = 'paper';
 
         const paperBody = document.createElement('div');
-        paperBody.className = 'paper-body';
 
         if (page.isFirstPage && titlePattern === '2') {
-          // パターン2：絶対配置ヘッダー + 本文エリア
+          // 🌟 パターン2：崩れない標準Flex構造
+          paperBody.className = 'paper-body layout-p2';
+
           const decoPattern = '❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁';
 
-          const headerArea = document.createElement('div');
-          headerArea.className = 'p2-header-area';
-          headerArea.innerHTML = `
-            <div class="line-col header-deco">${decoPattern}</div>
-            <div class="line-col header-title-col">
-              <span class="title-main">${escapeHtml(title)}</span>
-              <span class="date-sub">${displayDate}</span>
+          const headerBlock = document.createElement('div');
+          headerBlock.className = 'p2-header-block';
+          headerBlock.innerHTML = `
+            <div class="p2-deco-col">${decoPattern}</div>
+            <div class="p2-title-col">
+              <div class="p2-title-text">${escapeHtml(title)}</div>
+              <div class="p2-date-text">${displayDate}</div>
             </div>
-            <div class="line-col header-deco">${decoPattern}</div>
+            <div class="p2-deco-col">${decoPattern}</div>
           `;
-          paperBody.appendChild(headerArea);
+          paperBody.appendChild(headerBlock);
 
-          const bodyArea = document.createElement('div');
-          bodyArea.className = 'p2-body-area';
+          const bodyBlock = document.createElement('div');
+          bodyBlock.className = 'p2-body-block';
 
           const sectionTop = document.createElement('div');
           sectionTop.className = 'section section-top';
@@ -411,15 +428,14 @@
           sectionBottom.className = 'section section-bottom';
           page.bottomLines.forEach(l => sectionBottom.appendChild(createLineElement(l)));
 
-          bodyArea.appendChild(sectionTop);
-          bodyArea.appendChild(sectionBottom);
+          bodyBlock.appendChild(sectionTop);
+          bodyBlock.appendChild(sectionBottom);
 
-          paperBody.appendChild(bodyArea);
+          paperBody.appendChild(bodyBlock);
 
         } else {
           // パターン1および2ページ目以降
-          const bodyArea = document.createElement('div');
-          bodyArea.className = 'p1-body-area';
+          paperBody.className = 'paper-body layout-p1';
 
           const sectionTop = document.createElement('div');
           sectionTop.className = 'section section-top';
@@ -440,10 +456,8 @@
           sectionBottom.className = 'section section-bottom';
           page.bottomLines.forEach(l => sectionBottom.appendChild(createLineElement(l)));
 
-          bodyArea.appendChild(sectionTop);
-          bodyArea.appendChild(sectionBottom);
-
-          paperBody.appendChild(bodyArea);
+          paperBody.appendChild(sectionTop);
+          paperBody.appendChild(sectionBottom);
         }
 
         const footer = document.createElement('div');
