@@ -67,7 +67,7 @@
       gap: 30px;
     }
 
-    /* 用紙の外枠（ここは安全な横書きFlexbox） */
+    /* 用紙の外枠 */
     .paper {
       width: var(--paper-width);
       height: var(--paper-height);
@@ -81,7 +81,7 @@
       flex-shrink: 0;
     }
 
-    /* 🌟 絶対座標のキャンバス（高さ790px固定） */
+    /* 絶対座標のキャンバス（高さ790px固定） */
     .paper-body {
       position: relative;
       width: 100%;
@@ -89,7 +89,7 @@
       flex-shrink: 0;
     }
 
-    /* 中央の破線（Y座標: 395px地点） */
+    /* 中央の破線 */
     .abs-divider {
       position: absolute;
       left: 0;
@@ -98,47 +98,61 @@
       border-top: 1px dashed #cbd5e1;
     }
 
-    /* 🌟 絶対座標で配置される「1行」の共通ブロック */
+    /* 標準テキスト行 */
     .abs-line {
       position: absolute;
-      width: 26px; /* 行の幅を100%固定（潰れない） */
-      height: 380px; /* 上段・下段それぞれの高さ */
+      width: 26px;
+      height: 380px;
       writing-mode: vertical-rl;
       -webkit-writing-mode: vertical-rl;
       font-family: var(--font-serif);
       font-size: 13px;
-      line-height: 26px; /* 幅と完全に一致させて中央揃え */
+      line-height: 26px;
       white-space: nowrap;
       overflow: hidden;
     }
-
-    /* 飾り罫線 */
-    .deco-line {
-      font-size: 10px;
-      color: #475569;
-      letter-spacing: 0.03em;
-    }
-
-    /* タイトル（パターン2） */
-    .title-line {
-      font-size: 1.15rem;
-      font-weight: bold;
-      letter-spacing: 0.15em;
-      padding-top: 10px;
-    }
-
-    /* 小見出し */
     .heading-line {
       font-weight: bold;
       color: #0f172a;
-      text-align: center; /* 縦書き時の上下中央揃え */
+      text-align: center;
     }
 
-    /* 日付（下端固定用の特別ブロック） */
+    /* 🌟 パターン2：上下を完全に貫通する5行分のフルハイト要素 */
+    .abs-full-deco {
+      position: absolute;
+      width: 26px;
+      height: 790px;
+      top: 0;
+      writing-mode: vertical-rl;
+      -webkit-writing-mode: vertical-rl;
+      font-family: var(--font-serif);
+      font-size: 10px;
+      color: #475569;
+      line-height: 26px;
+      text-align: justify;
+      overflow: hidden;
+      letter-spacing: 0.1em;
+    }
+
+    .abs-full-title {
+      position: absolute;
+      width: 26px;
+      top: 50%; /* 上下中央に配置 */
+      transform: translateY(-50%);
+      writing-mode: vertical-rl;
+      -webkit-writing-mode: vertical-rl;
+      font-family: var(--font-serif);
+      font-size: 1.65rem; /* タイトルを大きく */
+      font-weight: bold;
+      letter-spacing: 0.35em;
+      line-height: 26px;
+      white-space: nowrap;
+    }
+
     .abs-date-indep {
       position: absolute;
       width: 26px;
-      bottom: 0; /* キャンバスの下端に絶対固定 */
+      bottom: 0; /* 下端揃え */
       writing-mode: vertical-rl;
       -webkit-writing-mode: vertical-rl;
       font-family: var(--font-serif);
@@ -251,9 +265,9 @@
     // 定数
     const CHARS_PER_LINE = 26;
     const LINES_PER_SECTION = 21;
-    const COL_WIDTH = 26; // 1行の幅（px）
-    const ROW_HEIGHT = 380; // 1段の高さ（px）
-    const VERTICAL_GAP = 30; // 上段と下段の間の隙間（px）
+    const COL_WIDTH = 26; 
+    const ROW_HEIGHT = 380; 
+    const VERTICAL_GAP = 30; 
 
     const inputs = ['titleInput', 'dateInput', 'textInput', 'pageStartInput'];
     inputs.forEach(id => document.getElementById(id).addEventListener('input', updateLayout));
@@ -321,8 +335,9 @@
           if (titlePattern === '1') {
             topCap = LINES_PER_SECTION - 3; 
           } else {
-            topCap = LINES_PER_SECTION - 3; 
-            bottomCap = LINES_PER_SECTION - 3; 
+            // パターン2は「5行」を贅沢に使う
+            topCap = LINES_PER_SECTION - 5; 
+            bottomCap = LINES_PER_SECTION - 5; 
           }
         }
         
@@ -346,7 +361,8 @@
 
     function updateStatusCard(totalLines, titlePattern, pages) {
       const card = document.getElementById('statusCard');
-      const page1Capacity = (titlePattern === '1') ? 39 : 36;
+      // 5行消費になるため、パターン2の1ページ目最大容量は (21-5)*2 = 32行
+      const page1Capacity = (titlePattern === '1') ? 39 : 32;
 
       if (pages.length === 1) {
         card.className = 'status-card success';
@@ -364,17 +380,16 @@
       const container = document.getElementById('previewArea');
       container.innerHTML = '';
 
-      const decoPattern = '❁'.repeat(40); // 飾り罫線
+      // 飾り罫線を長く生成（790px分）
+      const decoPattern = '❁'.repeat(80); 
 
       pages.forEach(page => {
         const paper = document.createElement('div');
         paper.className = 'paper';
 
-        // 🌟 絶対座標の基準となるキャンバス
         const paperBody = document.createElement('div');
         paperBody.className = 'paper-body';
 
-        // 破線ディバイダーを配置（高さ380px + 隙間15px = Y座標395px地点）
         const divider = document.createElement('div');
         divider.className = 'abs-divider';
         divider.style.top = (ROW_HEIGHT + (VERTICAL_GAP / 2)) + 'px';
@@ -385,27 +400,32 @@
 
         if (page.isFirstPage) {
           if (titlePattern === '2') {
-            // ----- 上段見出し（3列分） -----
-            createAbsElement(paperBody, 0, 0, decoPattern, 'deco');
-            createAbsElement(paperBody, 0, 1, title, 'title');
-            createAbsElement(paperBody, 0, 2, decoPattern, 'deco');
-            topColOffset = 3;
-
-            // ----- 下段見出し（3列分） -----
-            createAbsElement(paperBody, 1, 0, decoPattern, 'deco');
+            // 🌟 【5行ぶち抜きロジック】🌟
+            // Col 0 (右端): 飾り罫線
+            createFullHeightElement(paperBody, 0, decoPattern, 'abs-full-deco');
             
-            // 日付は特別に「下端」にピンポイントで絶対配置する
-            const dateEl = document.createElement('div');
-            dateEl.className = 'abs-date-indep';
-            dateEl.style.right = (1 * COL_WIDTH) + 'px'; // 右から2列目
-            dateEl.textContent = date;
-            paperBody.appendChild(dateEl);
+            // Col 1: 下部に日付
+            if (date) {
+              const dateEl = document.createElement('div');
+              dateEl.className = 'abs-date-indep';
+              dateEl.style.right = (1 * COL_WIDTH) + 'px';
+              dateEl.textContent = date;
+              paperBody.appendChild(dateEl);
+            }
 
-            createAbsElement(paperBody, 1, 2, decoPattern, 'deco');
-            bottomColOffset = 3;
+            // Col 2: 大見出し（上下中央を貫通）
+            createFullHeightElement(paperBody, 2, title, 'abs-full-title');
+
+            // Col 3: 余白（何もしない）
+
+            // Col 4: 飾り罫線
+            createFullHeightElement(paperBody, 4, decoPattern, 'abs-full-deco');
+            
+            topColOffset = 5;
+            bottomColOffset = 5;
 
           } else {
-            // ----- パターン1見出し -----
+            // パターン1
             const p1Box = document.createElement('div');
             p1Box.className = 'abs-p1-box';
             
@@ -425,12 +445,12 @@
           }
         }
 
-        // ----- 上段の本文を座標配置 -----
+        // 上段本文
         page.topLines.forEach((l, i) => {
           createAbsElement(paperBody, 0, topColOffset + i, l.text, l.type);
         });
 
-        // ----- 下段の本文を座標配置 -----
+        // 下段本文
         page.bottomLines.forEach((l, i) => {
           createAbsElement(paperBody, 1, bottomColOffset + i, l.text, l.type);
         });
@@ -445,24 +465,27 @@
       });
     }
 
-    // 🛠️ 魔法の絶対座標配置関数（ブラウザバグを完全回避）
+    // 縦全貫通要素の生成
+    function createFullHeightElement(container, col, content, className) {
+      const el = document.createElement('div');
+      el.className = className;
+      el.textContent = content;
+      el.style.right = (col * COL_WIDTH) + 'px';
+      container.appendChild(el);
+    }
+
+    // 通常テキスト行の生成
     function createAbsElement(container, row, col, content, type) {
       if (type === 'empty' && content === '') return;
 
       const el = document.createElement('div');
       let className = 'abs-line';
-
       if (type === 'heading') className += ' heading-line';
-      if (type === 'deco') className += ' deco-line';
-      if (type === 'title') className += ' title-line';
 
       el.className = className;
-      el.textContent = content; // XSS対策＋改行崩れ防止
+      el.textContent = content;
 
-      // X座標（右からのピクセル数）
       const rightPos = col * COL_WIDTH;
-      
-      // Y座標（上段は0、下段は 380 + 30 = 410px）
       const topPos = row === 0 ? 0 : (ROW_HEIGHT + VERTICAL_GAP);
 
       el.style.right = rightPos + 'px';
