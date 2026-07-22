@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>生徒会誌 縦書き原稿チェッカー</title>
+  <style>
+    :root {
+      --bg-color: #cbd5e1;
+      --sidebar-width: 380px;
+      --paper-width: 680px;
+      --paper-height: 920px;
+      --font-serif: "Shippori Mincho", "Yu Mincho", "YuMincho", "Hiragino Mincho ProN", "MS Mincho", serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg-color);
+      color: #333;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* 左側：操作パネル */
+    .sidebar {
+      width: var(--sidebar-width);
+      background: #ffffff;
+      border-right: 1px solid #94a3b8;
+      display: flex;
+      flex-direction: column;
+      padding: 18px;
+      gap: 12px;
+      overflow-y: auto;
+      flex-shrink: 0;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+      z-index: 10;
+    }
+
+    .sidebar h1 { font-size: 1.1rem; color: #0f172a; border-bottom: 2px solid #2563eb; padding-bottom: 6px; }
+
+    .status-card { padding: 12px; border-radius: 6px; font-size: 0.88rem; line-height: 1.4; }
+    .status-card.success { background-color: #f0fff4; border: 1px solid #86efac; color: #166534; }
+    .status-card.warning { background-color: #fff1f2; border: 1px solid #fca5a5; color: #991b1b; }
+    .status-title { font-weight: bold; font-size: 0.95rem; margin-bottom: 4px; }
+
+    .form-group { display: flex; flex-direction: column; gap: 4px; }
+    label { font-size: 0.82rem; font-weight: 600; color: #475569; }
+    input[type="text"], input[type="number"], textarea {
+      padding: 7px 9px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.88rem; width: 100%;
+    }
+    textarea { resize: vertical; min-height: 160px; font-family: var(--font-serif); line-height: 1.5; }
+
+    .radio-group { display: flex; flex-direction: column; gap: 6px; background: #f8fafc; padding: 8px; border: 1px solid #e2e8f0; border-radius: 4px; }
+    .radio-label { display: flex; align-items: center; gap: 6px; font-size: 0.82rem; cursor: pointer; }
+    .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+    /* 右側：プレビューエリア */
+    .preview-area {
+      flex: 1;
+      padding: 30px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 30px;
+    }
+
+    /* 用紙枠 */
+    .paper {
+      width: var(--paper-width);
+      height: var(--paper-height);
+      background: #ffffff;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+      padding: 40px 45px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .paper-body {
+      height: 800px;
+      width: 100%;
+    }
+
+    /* パターン1（図1風）：上下2段 */
+    .paper-body.layout-p1 {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    /* パターン2（図2風）：2段ぶち抜きレイアウト */
+    .paper-body.layout-p2 {
+      display: flex;
+      flex-direction: row-reverse;
+    }
+
+    .p2-header-container {
+      height: 100%;
+      writing-mode: vertical-rl;
+      -webkit-writing-mode: vertical-rl;
+      font-family: var(--font-serif);
+      margin-left: 10px;
+      flex-shrink: 0;
+    }
+
+    .p2-body-container {
+      flex: 1;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    /* 縦書き段（Section）設定 */
+    .section {
+      height: 375px;
+      width: 100%;
+      writing-mode: vertical-rl;
+      -webkit-writing-mode: vertical-rl;
+      font-family: var(--font-serif);
+      font-size: 13px;
+      line-height: 1.5;
+      letter-spacing: 0.05em;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+
+    .section-top { border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px; }
+    .section-bottom { padding-top: 8px; }
+
+    .line { margin-left: 7px; white-space: nowrap; }
+    .line.heading { font-weight: bold; margin-left: 12px; margin-right: 6px; text-align: center; color: #0f172a; }
+    .line.empty { opacity: 0; }
+
+    /* パターン1用の二重枠 */
+    .line.p1-header-box {
+      border: 2px double #0f172a;
+      padding: 12px 6px;
+      margin-left: 12px;
+      margin-right: 4px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      box-sizing: border-box;
+    }
+
+    .p1-title-text { font-weight: bold; font-size: 1.05rem; letter-spacing: 0.15em; text-align: center; }
+    .p1-date-text { font-size: 0.78rem; letter-spacing: 0.1em; margin-top: auto; }
+
+    /* パターン2用の装飾要素 */
+    .line.header-deco { font-size: 0.65rem; color: #475569; letter-spacing: 0.03em; margin-left: 6px; }
+    .line.header-title-line { margin-left: 8px; margin-right: 2px; }
+
+    .title-main-text { font-size: 1.1rem; font-weight: bold; letter-spacing: 0.15em; display: block; }
+    .date-sub-text { font-size: 0.78rem; letter-spacing: 0.1em; display: block; margin-top: 5em; }
+
+    /* ページフッター */
+    .paper-footer { text-align: center; font-family: var(--font-serif); font-size: 0.85rem; color: #64748b; }
+
+    @media print {
+      body { background: none; }
+      .sidebar { display: none; }
+      .preview-area { padding: 0; background: none; }
+      .paper { box-shadow: none; page-break-after: always; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 左側：操作パネル -->
+  <div class="sidebar">
+    <h1>生徒会誌 原稿チェッカー</h1>
+
+    <div id="statusCard" class="status-card success">
+      <div id="statusTitle" class="status-title">計算中...</div>
+      <div id="statusDetail">テキストを入力してください。</div>
+    </div>
+
+    <div class="form-group">
+      <label>タイトル（大見出し）の装飾パターン</label>
+      <div class="radio-group">
+        <label class="radio-label">
+          <input type="radio" name="titlePattern" value="1">
+          パターン1（図1：1段収まり二重枠）
+        </label>
+        <label class="radio-label">
+          <input type="radio" name="titlePattern" value="2" checked>
+          パターン2（図2：2段ぶち抜き飾り罫）
+        </label>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="titleInput">記事タイトル</label>
+      <input type="text" id="titleInput" value="２０２４年度卒業式">
+    </div>
+
+    <div class="form-group">
+      <label for="dateInput">日付・サブテキスト</label>
+      <input type="text" id="dateInput" value="25・3・16">
+    </div>
+
+    <div class="form-group">
+      <label for="textInput">本文テキスト（Googleドキュメントからそのまま貼り付け）</label>
+      <textarea id="textInput"> ３月１６日、第５０回卒業式が晴れやかに挙行された。５年ぶりとなる中高合同での卒業式。同じ入学指針をいただき、挑戦を重ねてきた同志、また、関西創価学園の卒業生として、学園行事である卒業式を同じ場所で迎え、スタートを切りたいとの思いで開催された。
+ 周令飛会長一行が関西高校に来校され、学園生へ祝辞が贈られた。周令飛会長は祝辞の中で、「言葉は違っても、思いの力は国境を超えます」と学園生に文学の素晴らしさを語るとともに、池田先生の「青年は時代の希望だ」との言葉を通じて、「皆さんが平和を呼びかけ、弱い立場の人々を思いやり、未来への希望をつづることで、世界に善意の種を蒔いていくことになります。文学を舟に見立て、文明が融合するホシの大海原へ旅に出航しましょう！」と学園生を励まされた。
+〈中学の取り組み〉
+ １１月末、実行委員が発足。仲間への恩返しをしたい、卒業を次の目標に向けた出発としたい、また、創立１００周年に向けた草創期として卒業式をいいものにしたいとの思いで活動が始まった。最高位目標を「５０期生一人ひとりが『絆』を胸に卒業式を迎え、未来に向けて出発する！」とし、「絆」の中でも「５０期生の絆」「感謝の絆」「創立者との絆」の３つの絆を築けるよう、卒業式に向け、卒業実行委員会を中心に様々な取り組みを実行してきた。</textarea>
+    </div>
+
+    <div class="config-grid">
+      <div class="form-group">
+        <label for="charsInput">1行の文字数</label>
+        <input type="number" id="charsInput" value="26">
+      </div>
+      <div class="form-group">
+        <label for="linesInput">1段の行数</label>
+        <input type="number" id="linesInput" value="21">
+      </div>
+      <div class="form-group">
+        <label for="pageStartInput">開始ページ</label>
+        <input type="number" id="pageStartInput" value="14">
+      </div>
+    </div>
+  </div>
+
+  <!-- 右側：縦書きプレビューエリア -->
+  <div class="preview-area" id="previewArea"></div>
+
+  <script>
+    const inputs = ['titleInput', 'dateInput', 'textInput', 'charsInput', 'linesInput', 'pageStartInput'];
+    inputs.forEach(id => document.getElementById(id).addEventListener('input', updateLayout));
+    
+    document.querySelectorAll('input[name="titlePattern"]').forEach(radio => {
+      radio.addEventListener('change', updateLayout);
+    });
+
+    function updateLayout() {
+      const titlePattern = document.querySelector('input[name="titlePattern"]:checked').value;
+      const title = document.getElementById('titleInput').value || 'タイトル';
+      const date = document.getElementById('dateInput').value || '';
+      const text = document.getElementById('textInput').value;
+      const charsPerLine = parseInt(document.getElementById('charsInput').value) || 26;
+      const linesPerSection = parseInt(document.getElementById('linesInput').value) || 21;
+      const startPageNum = parseInt(document.getElementById('pageStartInput').value) || 14;
+
+      const bodyLines = parseTextToLines(text, charsPerLine);
+      const pages = paginate(bodyLines, linesPerSection, titlePattern, startPageNum);
+      
+      updateStatusCard(bodyLines.length, linesPerSection, titlePattern, pages);
+      renderPreview(pages, title, date, titlePattern);
+    }
+
+    function parseTextToLines(text, charsPerLine) {
+      if (!text) return [];
+      const resultLines = [];
+
+      text.split('\n').forEach(para => {
+        let trimmed = para.trim();
+        if (trimmed === '') {
+          resultLines.push({ type: 'empty', text: '' });
+          return;
+        }
+
+        if ((trimmed.startsWith('〈') && trimmed.endsWith('〉')) || (trimmed.startsWith('【') && trimmed.endsWith('】'))) {
+          resultLines.push({ type: 'heading', text: trimmed });
+          return;
+        }
+
+        if (!trimmed.startsWith(' ') && !trimmed.startsWith(' ')) {
+          trimmed = ' ' + trimmed;
+        }
+
+        for (let i = 0; i < trimmed.length; i += charsPerLine) {
+          resultLines.push({
+            type: 'text',
+            text: trimmed.substring(i, i + charsPerLine)
+          });
+        }
+      });
+
+      return resultLines;
+    }
+
+    function paginate(bodyLines, linesPerSection, titlePattern, startPageNum) {
+      const pages = [];
+      let currentIdx = 0;
+      let pageOffset = 0;
+
+      while (currentIdx < bodyLines.length || pages.length === 0) {
+        const isFirstPage = (pageOffset === 0);
+        let topCap = linesPerSection;
+        let bottomCap = linesPerSection;
+
+        if (isFirstPage) {
+          if (titlePattern === '1') {
+            // パターン1：上段のみ見出し枠（3行分）で削られる
+            topCap = Math.max(0, linesPerSection - 3);
+          } else {
+            // パターン2：上下2段貫通の見出し（3行分）で左右とも削られる
+            topCap = Math.max(0, linesPerSection - 3);
+            bottomCap = Math.max(0, linesPerSection - 3);
+          }
+        }
+        
+        const topLines = bodyLines.slice(currentIdx, currentIdx + topCap);
+        currentIdx += topLines.length;
+
+        const bottomLines = bodyLines.slice(currentIdx, currentIdx + bottomCap);
+        currentIdx += bottomLines.length;
+
+        pages.push({
+          pageNum: startPageNum + pageOffset,
+          topLines,
+          bottomLines,
+          isFirstPage
+        });
+        pageOffset++;
+      }
+
+      return pages;
+    }
+
+    function updateStatusCard(totalLines, linesPerSection, titlePattern, pages) {
+      const card = document.getElementById('statusCard');
+      // パターン1は 39行、パターン2は 36行が1ページ目の上限容量
+      const page1Capacity = (titlePattern === '1') 
+        ? ((linesPerSection - 3) + linesPerSection)
+        : ((linesPerSection - 3) + (linesPerSection - 3));
+
+      if (pages.length === 1) {
+        card.className = 'status-card success';
+        document.getElementById('statusTitle').innerHTML = '✅ 1ページ内に綺麗に収まっています';
+        document.getElementById('statusDetail').innerHTML = `総行数: <strong>${totalLines} 行</strong> / 1ページ容量: ${page1Capacity} 行<br>(あと <strong>${page1Capacity - totalLines} 行</strong> 入ります)`;
+      } else {
+        card.className = 'status-card warning';
+        document.getElementById('statusTitle').innerHTML = `⚠️ 1ページを超えています（全 ${pages.length} ページ）`;
+        const overflow = totalLines - page1Capacity;
+        document.getElementById('statusDetail').innerHTML = `1ページ目の本文容量（${page1Capacity}行）に対し、<strong>${overflow} 行</strong> あふれています。<br>原稿を削るか調整が必要です。`;
+      }
+    }
+
+    function renderPreview(pages, title, date, titlePattern) {
+      const container = document.getElementById('previewArea');
+      container.innerHTML = '';
+
+      pages.forEach(page => {
+        const paper = document.createElement('div');
+        paper.className = 'paper';
+
+        const paperBody = document.createElement('div');
+
+        if (page.isFirstPage && titlePattern === '2') {
+          // --- パターン2（2段ぶち抜き） ---
+          paperBody.className = 'paper-body layout-p2';
+
+          const p2HeaderContainer = document.createElement('div');
+          p2HeaderContainer.className = 'p2-header-container';
+
+          const decoPattern = '❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁';
+
+          // 飾り罫（右）
+          const deco1 = document.createElement('div');
+          deco1.className = 'line header-deco';
+          deco1.textContent = decoPattern;
+          p2HeaderContainer.appendChild(deco1);
+
+          // タイトル
+          const titleEl = document.createElement('div');
+          titleEl.className = 'line header-title-line';
+          titleEl.innerHTML = `
+            <span class="title-main-text">${escapeHtml(title)}</span>
+            <span class="date-sub-text">${escapeHtml(date)}</span>
+          `;
+          p2HeaderContainer.appendChild(titleEl);
+
+          // 飾り罫（左）
+          const deco2 = document.createElement('div');
+          deco2.className = 'line header-deco';
+          deco2.textContent = decoPattern;
+          p2HeaderContainer.appendChild(deco2);
+
+          paperBody.appendChild(p2HeaderContainer);
+
+          const p2BodyContainer = document.createElement('div');
+          p2BodyContainer.className = 'p2-body-container';
+
+          const sectionTop = document.createElement('div');
+          sectionTop.className = 'section section-top';
+          page.topLines.forEach(l => sectionTop.appendChild(createLineElement(l)));
+
+          const sectionBottom = document.createElement('div');
+          sectionBottom.className = 'section section-bottom';
+          page.bottomLines.forEach(l => sectionBottom.appendChild(createLineElement(l)));
+
+          p2BodyContainer.appendChild(sectionTop);
+          p2BodyContainer.appendChild(sectionBottom);
+
+          paperBody.appendChild(p2BodyContainer);
+
+        } else {
+          // --- パターン1（1段収まり）および 2ページ目以降 ---
+          paperBody.className = 'paper-body layout-p1';
+
+          const sectionTop = document.createElement('div');
+          sectionTop.className = 'section section-top';
+
+          if (page.isFirstPage && titlePattern === '1') {
+            const p1Box = document.createElement('div');
+            p1Box.className = 'line p1-header-box';
+            p1Box.innerHTML = `
+              <div class="p1-title-text">${escapeHtml(title)}</div>
+              <div class="p1-date-text">${escapeHtml(date)}</div>
+            `;
+            sectionTop.appendChild(p1Box);
+          }
+
+          page.topLines.forEach(l => sectionTop.appendChild(createLineElement(l)));
+
+          const sectionBottom = document.createElement('div');
+          sectionBottom.className = 'section section-bottom';
+          page.bottomLines.forEach(l => sectionBottom.appendChild(createLineElement(l)));
+
+          paperBody.appendChild(sectionTop);
+          paperBody.appendChild(sectionBottom);
+        }
+
+        const footer = document.createElement('div');
+        footer.className = 'paper-footer';
+        footer.textContent = `― ${page.pageNum} ―`;
+
+        paper.appendChild(paperBody);
+        paper.appendChild(footer);
+        container.appendChild(paper);
+      });
+    }
+
+    function createLineElement(lineObj) {
+      const el = document.createElement('div');
+      el.className = `line ${lineObj.type}`;
+      el.textContent = lineObj.text;
+      return el;
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[m]);
+    }
+
+    updateLayout();
+  </script>
+</body>
+</html>
