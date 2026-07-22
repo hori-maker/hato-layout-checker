@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>生徒会誌 原稿チェッカー</title>
+  <title>生徒会誌 縦書き原稿チェッカー</title>
   <style>
     :root {
       --bg-color: #cbd5e1;
@@ -106,6 +106,7 @@
       font-family: var(--font-serif);
       margin-left: 15px;
       flex-shrink: 0;
+      display: flex;
     }
 
     .p2-body-container {
@@ -152,14 +153,22 @@
     }
 
     .p1-title-text { font-weight: bold; font-size: 1.05rem; letter-spacing: 0.15em; text-align: center; }
-    .p1-date-text { font-size: 0.78rem; letter-spacing: 0.1em; margin-top: auto; }
+    .p1-date-text { font-size: 0.78rem; letter-spacing: 0.1em; }
 
-    /* パターン2のぶち抜き見出し */
+    /* パターン2のぶち抜き見出し（高さ固定設定） */
     .line.header-deco { font-size: 0.65rem; color: #475569; letter-spacing: 0.03em; margin-left: 8px; }
-    .line.header-title-line { margin-left: 12px; margin-right: 4px; }
+    
+    .line.header-title-line {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      margin-left: 12px;
+      margin-right: 4px;
+    }
 
     .title-main-text { font-size: 1.15rem; font-weight: bold; letter-spacing: 0.15em; display: block; }
-    .date-sub-text { font-size: 0.78rem; letter-spacing: 0.1em; display: block; margin-top: 5em; }
+    .date-sub-text { font-size: 0.78rem; letter-spacing: 0.1em; display: block; min-height: 1em; }
 
     /* フッター */
     .paper-footer { text-align: center; font-family: var(--font-serif); font-size: 0.85rem; color: #64748b; }
@@ -178,13 +187,11 @@
   <div class="sidebar">
     <h1>生徒会誌 原稿チェッカー</h1>
 
-    <!-- 判定結果カード -->
     <div id="statusCard" class="status-card success">
       <div id="statusTitle" class="status-title">計算中...</div>
       <div id="statusDetail">テキストを入力してください。</div>
     </div>
 
-    <!-- パターン選択 -->
     <div class="form-group">
       <label>見出し（タイトル）のパターン</label>
       <div class="radio-group">
@@ -205,7 +212,7 @@
     </div>
 
     <div class="form-group">
-      <label for="dateInput">日付・サブテキスト</label>
+      <label for="dateInput">日付・サブテキスト（空欄でもOK）</label>
       <input type="text" id="dateInput" value="25・7・17">
     </div>
 
@@ -228,7 +235,6 @@
   <div class="preview-area" id="previewArea"></div>
 
   <script>
-    // 固定値定義（1行26文字 / 1段21行）
     const CHARS_PER_LINE = 26;
     const LINES_PER_SECTION = 21;
 
@@ -296,10 +302,8 @@
 
         if (isFirstPage) {
           if (titlePattern === '1') {
-            // パターン1：上段のみ3行削り（計39行）
             topCap = LINES_PER_SECTION - 3;
           } else {
-            // パターン2：上下2段ぶち抜きで実質5行削り（計32行）
             topCap = LINES_PER_SECTION - 5;
             bottomCap = LINES_PER_SECTION - 5;
           }
@@ -325,7 +329,6 @@
 
     function updateStatusCard(totalLines, titlePattern, pages) {
       const card = document.getElementById('statusCard');
-      // 固定容量：パターン1＝39行 / パターン2＝32行
       const page1Capacity = (titlePattern === '1') ? 39 : 32;
 
       if (pages.length === 1) {
@@ -343,6 +346,8 @@
     function renderPreview(pages, title, date, titlePattern) {
       const container = document.getElementById('previewArea');
       container.innerHTML = '';
+
+      const displayDate = date ? escapeHtml(date) : '&nbsp;';
 
       pages.forEach(page => {
         const paper = document.createElement('div');
@@ -368,7 +373,7 @@
           titleEl.className = 'line header-title-line';
           titleEl.innerHTML = `
             <span class="title-main-text">${escapeHtml(title)}</span>
-            <span class="date-sub-text">${escapeHtml(date)}</span>
+            <span class="date-sub-text">${displayDate}</span>
           `;
           p2HeaderContainer.appendChild(titleEl);
 
@@ -407,7 +412,7 @@
             p1Box.className = 'line p1-header-box';
             p1Box.innerHTML = `
               <div class="p1-title-text">${escapeHtml(title)}</div>
-              <div class="p1-date-text">${escapeHtml(date)}</div>
+              <div class="p1-date-text">${displayDate}</div>
             `;
             sectionTop.appendChild(p1Box);
           }
