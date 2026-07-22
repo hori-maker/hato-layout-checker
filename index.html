@@ -81,135 +81,116 @@
       flex-shrink: 0;
     }
 
+    /* 🌟 崩れない縦書きベース領域 */
     .paper-body {
       height: 800px;
       width: 100%;
+      writing-mode: vertical-rl;
+      -webkit-writing-mode: vertical-rl;
+      font-family: var(--font-serif);
+      white-space: nowrap;
     }
 
-    /* 🌟 パターン2：2段ぶち抜き用（崩れない堅牢Flex構造） */
-    .paper-body.layout-p2 {
-      display: flex;
-      flex-direction: row-reverse; /* 右端に見出し、左に本文 */
-    }
-
-    /* 右側見出しブロック */
-    .p2-header-block {
-      display: flex;
-      flex-direction: row-reverse; /* 右から左へ3列 */
-      height: 100%;
-      margin-left: 16px;
-      flex-shrink: 0;
+    /* パターン2：2段ぶち抜き見出しエリア */
+    .header-v-block {
+      display: inline-block;
+      height: 100%; /* 800px満額 */
+      vertical-align: top;
+      margin-left: 15px;
     }
 
     /* 飾り罫線の列 */
-    .p2-deco-col {
-      writing-mode: vertical-rl;
-      -webkit-writing-mode: vertical-rl;
-      font-family: var(--font-serif);
+    .deco-col {
+      display: inline-block;
+      height: 100%;
       font-size: 0.65rem;
       color: #475569;
       letter-spacing: 0.03em;
-      height: 100%;
-      overflow: hidden;
-      white-space: nowrap;
+      vertical-align: top;
       margin-left: 8px;
+      overflow: hidden;
     }
 
-    /* タイトルと日付の列（確実に上と下に分離） */
-    .p2-title-col {
-      display: flex;
-      flex-direction: column; /* 上から下 */
-      justify-content: space-between; /* 上端にタイトル、下端に日付 */
-      align-items: center;
+    /* タイトルと日付の列（絶対位置で物理固定） */
+    .title-col {
+      display: inline-block;
       height: 100%;
-      margin-left: 12px;
+      width: 28px;
+      position: relative;
+      vertical-align: top;
+      margin-left: 10px;
       margin-right: 4px;
     }
 
-    .p2-title-text {
-      writing-mode: vertical-rl;
-      -webkit-writing-mode: vertical-rl;
-      font-family: var(--font-serif);
+    .title-col .title-text {
+      position: absolute;
+      top: 0; /* 物理的一番上 */
+      right: 0;
       font-size: 1.15rem;
       font-weight: bold;
       letter-spacing: 0.15em;
-      white-space: nowrap;
     }
 
-    .p2-date-text {
-      writing-mode: vertical-rl;
-      -webkit-writing-mode: vertical-rl;
-      font-family: var(--font-serif);
+    .title-col .date-text {
+      position: absolute;
+      bottom: 0; /* 物理的一番下 */
+      right: 0;
       font-size: 0.78rem;
       letter-spacing: 0.1em;
-      white-space: nowrap;
     }
 
-    /* 左側本文ブロック */
-    .p2-body-block {
-      flex: 1;
+    /* 本文ブロック（上下2段） */
+    .body-v-block {
+      display: inline-block;
       height: 100%;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-    }
-
-    /* パターン1用レイアウト */
-    .paper-body.layout-p1 {
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
+      vertical-align: top;
     }
 
     /* 縦書き段（1行26文字ピッタリ） */
     .section {
-      height: 375px;
-      width: 100%;
-      writing-mode: vertical-rl;
-      -webkit-writing-mode: vertical-rl;
-      font-family: var(--font-serif);
+      height: 385px;
       font-size: 13px;
       line-height: 1.5;
       letter-spacing: 0.05em;
       box-sizing: border-box;
       overflow: hidden;
-      white-space: nowrap;
     }
 
-    .section-top { border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px; }
-    .section-bottom { padding-top: 8px; }
+    .section-top {
+      border-bottom: 1px dashed #cbd5e1;
+      margin-bottom: 30px; /* 上段と下段の間のスキマ */
+    }
 
     .line { display: inline-block; vertical-align: top; margin-left: 8px; white-space: nowrap; }
     .line.heading { font-weight: bold; margin-left: 14px; margin-right: 6px; text-align: center; color: #0f172a; }
     .line.empty { opacity: 0; }
 
-    /* パターン1の二重枠見出し */
-    .line.p1-header-box {
+    /* パターン1用の二重枠見出し */
+    .p1-header-box {
+      display: inline-block;
+      height: 100%;
+      width: 36px;
       border: 2px double #0f172a;
-      padding: 12px 6px;
+      position: relative;
+      vertical-align: top;
       margin-left: 14px;
       margin-right: 4px;
-      height: 100%;
-      display: inline-flex;
-      flex-direction: column;
-      justify-content: space-between;
-      align-items: center;
       box-sizing: border-box;
-      vertical-align: top;
     }
 
-    .p1-title-text {
-      writing-mode: vertical-rl;
-      -webkit-writing-mode: vertical-rl;
+    .p1-header-box .p1-title-text {
+      position: absolute;
+      top: 12px;
+      right: 6px;
       font-weight: bold;
       font-size: 1.05rem;
       letter-spacing: 0.15em;
-      text-align: center;
     }
 
-    .p1-date-text {
-      writing-mode: vertical-rl;
-      -webkit-writing-mode: vertical-rl;
+    .p1-header-box .p1-date-text {
+      position: absolute;
+      bottom: 12px;
+      right: 6px;
       font-size: 0.78rem;
       letter-spacing: 0.1em;
     }
@@ -266,7 +247,7 @@
 〈中学生の取り組み〉
 中学栄光の日テーマは、「師弟の絆今ここに！私が創るこの瞬間を 私が創（はじ）める挑戦を」。ここには、常に池田先生は心の中にいて、創立者と共に自らの挑戦で学園の歴史を創るという思いが込められている。
 さらに、「新時代」の栄光の日という抽象的な言葉をより一歩深め、具体的に創立者が学園生に体現してほしいと願われた「文化」というサブテーマを柱として取り組みを進めた。
-拡大会では、愛唱歌斉唱や一言発表などに加えて、例年とは一味、二味違う実行委員企画が行われた。逆再生や翻訳アプリを使ってより面白くしたイントロクイズや、学園の先生方の様々なエピソードのクイズ「学園衝撃グランプリ」。栄光の日の軸である文化をもとにコーデを組み、何を表現しているかを当てる「クレイジーファッションショー」。これらの企画で、伝統は残しつつも皆が楽しめる、一新された拡大会となった。「私がつくる新時代プロジェクト」では、二つのキャンペーンが行われた。「師弟の絆キャンペーン」では、創立者のご指導や名言が掲示された。廊下には、全校に募集されたご指導や耳を傾ける姿勢が自然と身につく。そして二つ目は、学を「自分の生き方」に引き寄せて考える習慣を育むこと。社会や歴史、思想について書かれた文章も、対話を重ねる中で、今の自分や将来の進路と結びつき、血の通ったびへと変わっていく。この２つを目的として、小さな実績の場として輪読会には多くの人が参加している。「一人で研鑽する時よりも色んな人と共に研鑽することで、自分は気づけなかった池田先生が込めてくださっている思いに気づけたり考えを一人一人の経験と考えとリンクさせて」</textarea>
+拡大会では、愛唱歌斉唱や一言発表などに加えて、例年とは一味、二味違う実行委員企画が行われた。逆再生や翻訳アプリを使ってより面白くしたイントロクイズや、学園の先生方の様々なエピソードのクイズ「学園衝撃グランプリ」。栄光の日の軸である文化をもとにコーデを組み、何を表現しているかを当てる「クレイジーファッションショー」。これらの企画で、伝統は残しつつも皆が楽しめる、一新された拡大会となった。「私がつくる新時代プロジェクト」では、二つのキャンペーンが行われた。「師弟の絆キャンペーン」では、創立者のご指導や名言が掲示された。廊下には、全校に募集されたご指導や耳を傾ける姿勢が自然と身につく。そして二つ目は、学を「自分の生き方」に引き寄せて考える習慣を育むこと。社会や歴史、思想について書かれた文章も、対話を重ねる中で、今の自分や将来の進路と結びつき、血の通ったびへと変わっていく。この２つを目的として、小さな実績の場として輪読会には多くの人が参加している。「一人で研鑽する時よりも色ん」</textarea>
     </div>
 
     <div class="form-group">
@@ -392,33 +373,33 @@
       container.innerHTML = '';
 
       const displayDate = date ? escapeHtml(date) : '';
+      const decoPattern = '❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁';
 
       pages.forEach(page => {
         const paper = document.createElement('div');
         paper.className = 'paper';
 
         const paperBody = document.createElement('div');
+        paperBody.className = 'paper-body';
 
         if (page.isFirstPage && titlePattern === '2') {
-          // 🌟 パターン2：崩れない標準Flex構造
-          paperBody.className = 'paper-body layout-p2';
-
-          const decoPattern = '❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁❁';
-
+          // --------------------------------------------------
+          // パターン2：2段ぶち抜き見出し（絶対配置で位置固定）
+          // --------------------------------------------------
           const headerBlock = document.createElement('div');
-          headerBlock.className = 'p2-header-block';
+          headerBlock.className = 'header-v-block';
           headerBlock.innerHTML = `
-            <div class="p2-deco-col">${decoPattern}</div>
-            <div class="p2-title-col">
-              <div class="p2-title-text">${escapeHtml(title)}</div>
-              <div class="p2-date-text">${displayDate}</div>
+            <div class="deco-col">${decoPattern}</div>
+            <div class="title-col">
+              <span class="title-text">${escapeHtml(title)}</span>
+              <span class="date-text">${displayDate}</span>
             </div>
-            <div class="p2-deco-col">${decoPattern}</div>
+            <div class="deco-col">${decoPattern}</div>
           `;
           paperBody.appendChild(headerBlock);
 
           const bodyBlock = document.createElement('div');
-          bodyBlock.className = 'p2-body-block';
+          bodyBlock.className = 'body-v-block';
 
           const sectionTop = document.createElement('div');
           sectionTop.className = 'section section-top';
@@ -434,18 +415,21 @@
           paperBody.appendChild(bodyBlock);
 
         } else {
-          // パターン1および2ページ目以降
-          paperBody.className = 'paper-body layout-p1';
+          // --------------------------------------------------
+          // パターン1（1段見出し）および 2ページ目以降
+          // --------------------------------------------------
+          const bodyBlock = document.createElement('div');
+          bodyBlock.className = 'body-v-block';
 
           const sectionTop = document.createElement('div');
           sectionTop.className = 'section section-top';
 
           if (page.isFirstPage && titlePattern === '1') {
             const p1Box = document.createElement('div');
-            p1Box.className = 'line p1-header-box';
+            p1Box.className = 'p1-header-box';
             p1Box.innerHTML = `
-              <div class="p1-title-text">${escapeHtml(title)}</div>
-              <div class="p1-date-text">${displayDate}</div>
+              <span class="p1-title-text">${escapeHtml(title)}</span>
+              <span class="p1-date-text">${displayDate}</span>
             `;
             sectionTop.appendChild(p1Box);
           }
@@ -456,8 +440,10 @@
           sectionBottom.className = 'section section-bottom';
           page.bottomLines.forEach(l => sectionBottom.appendChild(createLineElement(l)));
 
-          paperBody.appendChild(sectionTop);
-          paperBody.appendChild(sectionBottom);
+          bodyBlock.appendChild(sectionTop);
+          bodyBlock.appendChild(sectionBottom);
+
+          paperBody.appendChild(bodyBlock);
         }
 
         const footer = document.createElement('div');
