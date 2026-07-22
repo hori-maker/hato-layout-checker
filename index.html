@@ -81,14 +81,13 @@
       flex-shrink: 0;
     }
 
-    /* 本文エリア（標準の横向き座標系で確実に配置） */
     .paper-body {
       height: 800px;
       width: 100%;
     }
 
     /* =========================================================
-       パターン2（2段ぶち抜き）：崩れない標準Flex構造
+       パターン2（2段ぶち抜き）：崩れないハイブリッド構造
        ========================================================= */
     .paper-body.layout-p2 {
       display: flex;
@@ -96,60 +95,52 @@
       justify-content: flex-start;
     }
 
-    /* 右側：見出しエリア全体 */
-    .p2-header-box {
+    /* 右側：貫通見出しエリア */
+    .p2-header-group {
       display: flex;
       flex-direction: row-reverse; /* 右から左へ（右罫線、タイトル、左罫線） */
       height: 100%;
       margin-left: 20px;
       flex-shrink: 0;
-    }
-
-    /* 飾り罫線 */
-    .p2-deco {
       writing-mode: vertical-rl;
       -webkit-writing-mode: vertical-rl;
-      font-family: var(--font-serif);
+    }
+
+    .p2-deco {
+      height: 100%;
       font-size: 0.65rem;
       color: #475569;
       letter-spacing: 0.03em;
-      height: 100%;
+      margin: 0 4px;
       overflow: hidden;
       white-space: nowrap;
-      margin: 0 4px;
     }
 
-    /* タイトル＋日付の柱（標準Flexboxで上端にタイトル、下端に日付） */
-    .p2-title-column {
+    /* 🌟 縦書き時の上下分離（flex-direction: row がインライン軸＝上から下） */
+    .p2-title-col {
       display: flex;
-      flex-direction: column; /* 上から下へ */
-      justify-content: space-between; /* 上端と下端に自動で振り分け */
+      flex-direction: row; /* 縦書き時の主軸は上から下！ */
+      justify-content: space-between; /* 上端にタイトル、下端に日付 */
       align-items: center;
       height: 100%;
       margin: 0 8px;
     }
 
-    .p2-title-column .title-text {
-      writing-mode: vertical-rl;
-      -webkit-writing-mode: vertical-rl;
-      font-family: var(--font-serif);
+    .p2-title-col .title-text {
       font-size: 1.15rem;
       font-weight: bold;
       letter-spacing: 0.15em;
       white-space: nowrap;
     }
 
-    .p2-title-column .date-text {
-      writing-mode: vertical-rl;
-      -webkit-writing-mode: vertical-rl;
-      font-family: var(--font-serif);
+    .p2-title-col .date-text {
       font-size: 0.78rem;
       letter-spacing: 0.1em;
       white-space: nowrap;
     }
 
     /* 左側：本文エリア（上下2段） */
-    .p2-body-box {
+    .p2-body-group {
       flex: 1;
       height: 100%;
       display: flex;
@@ -167,8 +158,8 @@
     }
 
     .p1-header-box {
-      display: flex;
-      flex-direction: column;
+      display: inline-flex;
+      flex-direction: row; /* 縦書き時の主軸（上から下） */
       justify-content: space-between;
       align-items: center;
       height: 100%;
@@ -177,13 +168,12 @@
       margin-left: 14px;
       margin-right: 4px;
       box-sizing: border-box;
-      flex-shrink: 0;
+      vertical-align: top;
+      writing-mode: vertical-rl;
+      -webkit-writing-mode: vertical-rl;
     }
 
     .p1-header-box .title-text {
-      writing-mode: vertical-rl;
-      -webkit-writing-mode: vertical-rl;
-      font-family: var(--font-serif);
       font-weight: bold;
       font-size: 1.05rem;
       letter-spacing: 0.15em;
@@ -191,9 +181,6 @@
     }
 
     .p1-header-box .date-text {
-      writing-mode: vertical-rl;
-      -webkit-writing-mode: vertical-rl;
-      font-family: var(--font-serif);
       font-size: 0.78rem;
       letter-spacing: 0.1em;
       white-space: nowrap;
@@ -410,25 +397,22 @@
         const paperBody = document.createElement('div');
 
         if (page.isFirstPage && titlePattern === '2') {
-          // --------------------------------------------------
-          // パターン2：崩れない標準Flex構造
-          // --------------------------------------------------
           paperBody.className = 'paper-body layout-p2';
 
-          const headerBox = document.createElement('div');
-          headerBox.className = 'p2-header-box';
-          headerBox.innerHTML = `
+          const headerGroup = document.createElement('div');
+          headerGroup.className = 'p2-header-group';
+          headerGroup.innerHTML = `
             <div class="p2-deco">${decoPattern}</div>
-            <div class="p2-title-column">
-              <div class="title-text">${escapeHtml(title)}</div>
-              <div class="date-text">${displayDate}</div>
+            <div class="p2-title-col">
+              <span class="title-text">${escapeHtml(title)}</span>
+              <span class="date-text">${displayDate}</span>
             </div>
             <div class="p2-deco">${decoPattern}</div>
           `;
-          paperBody.appendChild(headerBox);
+          paperBody.appendChild(headerGroup);
 
-          const bodyBox = document.createElement('div');
-          bodyBox.className = 'p2-body-box';
+          const bodyGroup = document.createElement('div');
+          bodyGroup.className = 'p2-body-group';
 
           const sectionTop = document.createElement('div');
           sectionTop.className = 'section section-top';
@@ -438,16 +422,16 @@
           sectionBottom.className = 'section section-bottom';
           page.bottomLines.forEach(l => sectionBottom.appendChild(createLineElement(l)));
 
-          bodyBox.appendChild(sectionTop);
-          bodyBox.appendChild(sectionBottom);
+          bodyGroup.appendChild(sectionTop);
+          bodyGroup.appendChild(sectionBottom);
 
-          paperBody.appendChild(bodyBox);
+          paperBody.appendChild(bodyGroup);
 
         } else {
-          // --------------------------------------------------
-          // パターン1および2ページ目以降
-          // --------------------------------------------------
           paperBody.className = 'paper-body layout-p1';
+
+          const bodyGroup = document.createElement('div');
+          bodyGroup.className = 'p2-body-group';
 
           const sectionTop = document.createElement('div');
           sectionTop.className = 'section section-top';
@@ -456,8 +440,8 @@
             const p1Box = document.createElement('div');
             p1Box.className = 'p1-header-box';
             p1Box.innerHTML = `
-              <div class="title-text">${escapeHtml(title)}</div>
-              <div class="date-text">${displayDate}</div>
+              <span class="title-text">${escapeHtml(title)}</span>
+              <span class="date-text">${displayDate}</span>
             `;
             sectionTop.appendChild(p1Box);
           }
@@ -468,8 +452,10 @@
           sectionBottom.className = 'section section-bottom';
           page.bottomLines.forEach(l => sectionBottom.appendChild(createLineElement(l)));
 
-          paperBody.appendChild(sectionTop);
-          paperBody.appendChild(sectionBottom);
+          bodyGroup.appendChild(sectionTop);
+          bodyGroup.appendChild(sectionBottom);
+
+          paperBody.appendChild(bodyGroup);
         }
 
         const footer = document.createElement('div');
