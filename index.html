@@ -8,7 +8,6 @@
     :root {
       --bg-color: #cbd5e1;
       --sidebar-width: 360px;
-      /* 23行（598px）が綺麗に収まるように用紙幅を拡張 */
       --paper-width: 720px;
       --paper-height: 920px;
       --font-serif: "Shippori Mincho", "Yu Mincho", "YuMincho", "Hiragino Mincho ProN", "MS Mincho", serif;
@@ -111,6 +110,8 @@
       line-height: 26px;
       white-space: nowrap;
       overflow: hidden;
+      /* 🌟 句読点の自動字詰め（カーニング）を強制オフにして等幅を保つ */
+      font-feature-settings: "palt" 0, "halt" 0, "chws" 0;
     }
     .heading-line {
       font-weight: bold;
@@ -263,7 +264,6 @@
   <div class="preview-area" id="previewArea"></div>
 
   <script>
-    // 🌟 最新の正確な仕様を適用 🌟
     const CHARS_PER_LINE = 27;    // 1行あたり27文字
     const LINES_PER_SECTION = 23; // 1段あたり23行
     const COL_WIDTH = 26; 
@@ -296,7 +296,9 @@
       const resultLines = [];
 
       text.split('\n').forEach(para => {
-        let trimmed = para.trim();
+        // 🌟 半角スペースを全角スペースに自動変換（ズレ防止）
+        let trimmed = para.trim().replace(/ /g, ' ');
+        
         if (trimmed === '') {
           resultLines.push({ type: 'empty', text: ' ' });
           return;
@@ -307,7 +309,8 @@
           return;
         }
 
-        if (!trimmed.startsWith(' ') && !trimmed.startsWith(' ')) {
+        // 段落の先頭がスペース以外なら全角スペース（字下げ）を追加
+        if (!trimmed.startsWith(' ')) {
           trimmed = ' ' + trimmed;
         }
 
@@ -334,9 +337,9 @@
 
         if (isFirstPage) {
           if (titlePattern === '1') {
-            topCap = LINES_PER_SECTION - 3; // 1段見出しは3行消費
+            topCap = LINES_PER_SECTION - 3; 
           } else {
-            topCap = LINES_PER_SECTION - 5; // 2段ぶち抜きは5行消費
+            topCap = LINES_PER_SECTION - 5; 
             bottomCap = LINES_PER_SECTION - 5; 
           }
         }
@@ -361,8 +364,6 @@
 
     function updateStatusCard(totalLines, titlePattern, pages) {
       const card = document.getElementById('statusCard');
-      // パターン1: (23-3) + 23 = 43行
-      // パターン2: (23-5) + (23-5) = 36行
       const page1Capacity = (titlePattern === '1') ? 43 : 36;
 
       if (pages.length === 1) {
