@@ -98,7 +98,7 @@
       border-top: 1px dashed #cbd5e1;
     }
 
-    /* 標準テキスト行 */
+    /* 標準テキスト行の外枠 */
     .abs-line {
       position: absolute;
       width: 26px;
@@ -106,17 +106,21 @@
       writing-mode: vertical-rl;
       -webkit-writing-mode: vertical-rl;
       font-family: var(--font-serif);
-      font-size: 13px;
-      line-height: 26px;
       white-space: nowrap;
-      overflow: hidden;
-      /* 🌟 句読点の自動字詰め（カーニング）を強制オフにして等幅を保つ */
-      font-feature-settings: "palt" 0, "halt" 0, "chws" 0;
     }
-    .heading-line {
+
+    /* 🌟 今回の要：1文字ずつ絶対に変形しない固定枠に入れる */
+    .abs-line span {
+      display: inline-block;
+      width: 26px;
+      height: calc(380px / 27); /* 380pxを27文字で完璧に等分（約14.07px） */
+      line-height: calc(380px / 27);
+      font-size: 13.5px;
+    }
+
+    .heading-line span {
       font-weight: bold;
       color: #0f172a;
-      text-align: center;
     }
 
     /* 🌟 パターン2：上下を完全に貫通するフルハイト要素 */
@@ -169,7 +173,7 @@
       position: absolute;
       top: 0;
       right: 0;
-      width: 74px; /* 3列分の幅 */
+      width: 74px;
       height: 380px;
       border: 2px double #0f172a;
       box-sizing: border-box;
@@ -296,8 +300,13 @@
       const resultLines = [];
 
       text.split('\n').forEach(para => {
-        // 🌟 半角スペースを全角スペースに自動変換（ズレ防止）
+        // 🌟 1. 半角スペースを全角スペースに変換
         let trimmed = para.trim().replace(/ /g, ' ');
+        
+        // 🌟 2. 半角英数字や記号（!〜~）をすべて全角に自動変換して幅を統一
+        trimmed = trimmed.replace(/[!-~]/g, function(s) {
+          return String.fromCharCode(s.charCodeAt(0) + 0xFEE0);
+        });
         
         if (trimmed === '') {
           resultLines.push({ type: 'empty', text: ' ' });
@@ -309,8 +318,7 @@
           return;
         }
 
-        // 段落の先頭がスペース以外なら全角スペース（字下げ）を追加
-        if (!trimmed.startsWith(' ')) {
+        if (!trimmed.startsWith(' ') && !trimmed.startsWith(' ')) {
           trimmed = ' ' + trimmed;
         }
 
@@ -401,11 +409,8 @@
 
         if (page.isFirstPage) {
           if (titlePattern === '2') {
-            
-            // 1行目 (Col 0): 飾り罫線
             createFullHeightElement(paperBody, 0, decoPattern, 'abs-full-deco');
             
-            // 2行目 (Col 1): 日付
             if (date) {
               const dateEl = document.createElement('div');
               dateEl.className = 'abs-date-indep';
@@ -414,20 +419,13 @@
               paperBody.appendChild(dateEl);
             }
 
-            // 3行目 (Col 2): 大見出し
             createFullHeightElement(paperBody, 2, title, 'abs-full-title');
-
-            // 4行目 (Col 3): 空白の余白
-
-            // 5行目 (Col 4): 飾り罫線
             createFullHeightElement(paperBody, 4, decoPattern, 'abs-full-deco');
             
-            // 本文は 6行目から
             topColOffset = 5;
             bottomColOffset = 5;
 
           } else {
-            // パターン1
             const p1Box = document.createElement('div');
             p1Box.className = 'abs-p1-box';
             
@@ -447,12 +445,10 @@
           }
         }
 
-        // 上段本文
         page.topLines.forEach((l, i) => {
           createAbsElement(paperBody, 0, topColOffset + i, l.text, l.type);
         });
 
-        // 下段本文
         page.bottomLines.forEach((l, i) => {
           createAbsElement(paperBody, 1, bottomColOffset + i, l.text, l.type);
         });
@@ -467,7 +463,6 @@
       });
     }
 
-    // 縦全貫通要素の生成
     function createFullHeightElement(container, col, content, className) {
       const el = document.createElement('div');
       el.className = className;
@@ -476,7 +471,6 @@
       container.appendChild(el);
     }
 
-    // 通常テキスト行の生成
     function createAbsElement(container, row, col, content, type) {
       if (type === 'empty' && content === '') return;
 
@@ -485,7 +479,17 @@
       if (type === 'heading') className += ' heading-line';
 
       el.className = className;
-      el.textContent = content;
+
+      // 🌟 ここが究極の解決策：1文字ずつ「固定サイズの箱(span)」に入れる
+      if (type === 'text' || type === 'heading' || type === 'empty') {
+        for (let char of content) {
+          const span = document.createElement('span');
+          span.textContent = char;
+          el.appendChild(span);
+        }
+      } else {
+        el.textContent = content;
+      }
 
       const rightPos = col * COL_WIDTH;
       const topPos = row === 0 ? 0 : (ROW_HEIGHT + VERTICAL_GAP);
